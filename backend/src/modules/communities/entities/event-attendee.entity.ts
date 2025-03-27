@@ -30,7 +30,7 @@ export class EventAttendee {
   eventId: string;
 
   @Column({
-    type: 'varchar',
+    type: 'text',
     default: AttendeeStatus.GOING
   })
   status: AttendeeStatus;
@@ -44,12 +44,12 @@ export class EventAttendee {
   @Column({ default: false })
   attended: boolean;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'datetime' })
   updatedAt: Date;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: 'datetime' })
   checkedInAt: Date;
 }

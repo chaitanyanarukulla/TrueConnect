@@ -75,9 +75,8 @@ export class EventsService {
       .select([
         'event',
         'creator.id',
-        'creator.firstName',
-        'creator.lastName',
-        'creator.profilePhoto',
+        'creator.name',
+        'creator.profilePicture',
       ]);
 
     // Filter by status if provided
@@ -340,9 +339,8 @@ export class EventsService {
       .select([
         'event',
         'creator.id',
-        'creator.firstName',
-        'creator.lastName',
-        'creator.profilePhoto',
+        'creator.name',
+        'creator.profilePicture',
         'community.id',
         'community.name',
         'community.imageUrl',
@@ -382,34 +380,62 @@ export class EventsService {
       });
     }
     
-    // Sort by relevance: 
-    // 1. Events from communities the user is a member of
-    // 2. Recent and upcoming events
-    query.addSelect(
-      `CASE WHEN event.communityId IN (:...userCommunityIds) THEN 1 ELSE 0 END`,
-      'relevance'
-    )
-    .setParameter('userCommunityIds', userCommunityIds.length > 0 ? userCommunityIds : ['']) // Handle empty array case
-    .orderBy('relevance', 'DESC')
-    .addOrderBy('event.startTime', 'ASC');
-    
-    // Apply pagination
-    query.skip(skip).take(limit);
-    
-    // Get total count for pagination metadata
-    const totalCount = await query.getCount();
-    
-    // Execute query
-    const events = await query.getMany();
-    
-    return {
-      data: events,
-      meta: {
-        total: totalCount,
-        page,
-        limit,
-        pages: Math.ceil(totalCount / limit),
+    try {
+      // Create a simpler count query
+      const countQuery = this.eventsRepository.createQueryBuilder('event');
+      
+      // Apply the same filters but without joins
+      if (options.status) {
+        countQuery.andWhere('event.status = :status', { status: options.status });
+      } else {
+        countQuery.andWhere('event.status = :status', { status: EventStatus.PUBLISHED });
       }
-    };
+      
+      if (options.type) {
+        countQuery.andWhere('event.type = :type', { type: options.type });
+      }
+      
+      if (options.upcoming) {
+        countQuery.andWhere('event.startTime > :now', { now: new Date() });
+      }
+      
+      if (options.startDate) {
+        countQuery.andWhere('event.startTime >= :startDate', { startDate: options.startDate });
+      }
+      
+      if (options.endDate) {
+        countQuery.andWhere('event.startTime <= :endDate', { endDate: options.endDate });
+      }
+      
+      if (options.tags && options.tags.length > 0) {
+        options.tags.forEach((tag, index) => {
+          countQuery.andWhere(`event.tags LIKE :tag${index}`, { [`tag${index}`]: `%${tag}%` });
+        });
+      }
+      
+      const totalCount = await countQuery.getCount();
+      
+      // Sort by start time - SQLite doesn't support complex CASE expressions in ORDER BY
+      query.orderBy('event.startTime', 'ASC');
+      
+      // Apply pagination
+      query.skip(skip).take(limit);
+      
+      // Execute query - get all events with a simplified approach to avoid SQLite limitations
+      const events = await query.getMany();
+      
+      return {
+        data: events,
+        meta: {
+          total: totalCount,
+          page,
+          limit,
+          pages: Math.ceil(totalCount / limit),
+        }
+      };
+    } catch (error) {
+      this.logger.error(`Error discovering events: ${error.message}`, error.stack);
+      throw new Error(`Failed to discover events: ${error.message}`);
+    }
   }
 }

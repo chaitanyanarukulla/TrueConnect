@@ -1,15 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, JoinColumn, Unique } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Post } from './post.entity';
-
-export enum ReactionType {
-  LIKE = 'like',
-  LOVE = 'love',
-  LAUGH = 'laugh',
-  SURPRISED = 'surprised',
-  SAD = 'sad',
-  ANGRY = 'angry'
-}
+import { ReactionType } from '../../../types/enums';
 
 @Entity('post_reactions')
 @Unique(['userId', 'postId'])
@@ -37,6 +29,6 @@ export class PostReaction {
   })
   type: ReactionType;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;
 }

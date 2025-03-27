@@ -16,7 +16,7 @@ const getAuthHeader = async (): Promise<Record<string, string>> => {
   };
 };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
 export interface Community {
   id: string;

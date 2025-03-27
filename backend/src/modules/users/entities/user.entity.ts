@@ -23,11 +23,11 @@ export class User {
   @Exclude({ toPlainOnly: true })
   password: string;
 
-  @Column({ type: 'date' })
+  @Column({ type: 'datetime' })
   birthdate: Date;
 
   @Column({
-    type: 'varchar',
+    type: 'text',
     // Using check constraint instead of enum for SQLite compatibility
     // While keeping the values limited to these options
   })
@@ -45,14 +45,14 @@ export class User {
   @Column({ type: 'simple-array', nullable: true })
   interests: string[];
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: { to: val => val ? JSON.stringify(val) : null, from: val => val ? JSON.parse(val) : null } })
   preferences: {
     ageRange?: { min: number; max: number };
     distance?: number;
     genderPreferences?: string[];
   };
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: { to: val => val ? JSON.stringify(val) : null, from: val => val ? JSON.parse(val) : null } })
   socialMedia: {
     instagram?: string;
     twitter?: string;
@@ -70,7 +70,7 @@ export class User {
   @Column({ nullable: true })
   education: string;
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: { to: val => val ? JSON.stringify(val) : null, from: val => val ? JSON.parse(val) : null } })
   privacySettings: {
     showLocation?: boolean;
     showAge?: boolean;
@@ -87,15 +87,15 @@ export class User {
   @Column({ default: true })
   isActive: boolean;
 
-  @Column({ default: 'user' })
+  @Column({ type: 'text', default: 'user' })
   role: string;
   
   @Column({ default: false })
   acceptedTerms: boolean;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'datetime' })
   updatedAt: Date;
 }

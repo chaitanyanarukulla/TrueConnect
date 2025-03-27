@@ -27,8 +27,7 @@ export class NotificationPreference {
   user: User;
 
   @Column({
-    type: 'enum',
-    enum: NotificationType
+    type: 'text'
   })
   type: NotificationType;
 
@@ -39,8 +38,12 @@ export class NotificationPreference {
   enabled: boolean;
 
   @Column({
-    type: 'simple-array',
-    default: NotificationChannel.IN_APP
+    type: 'text',
+    default: NotificationChannel.IN_APP,
+    transformer: {
+      to: (value: NotificationChannel[]) => value.join(','),
+      from: (value: string) => value.split(',') as NotificationChannel[]
+    }
   })
   channels: NotificationChannel[];
 
@@ -58,9 +61,9 @@ export class NotificationPreference {
   })
   includeInDigest: boolean;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
   updatedAt: Date;
 }

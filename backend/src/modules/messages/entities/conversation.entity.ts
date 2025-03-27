@@ -2,7 +2,6 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDat
 import { User } from '../../users/entities/user.entity';
 import { Match } from '../../matches/entities/match.entity';
 import { Message } from './message.entity';
-
 @Entity('conversations')
 export class Conversation {
   @PrimaryGeneratedColumn('uuid')
@@ -35,12 +34,12 @@ export class Conversation {
   @OneToMany(() => Message, message => message.conversation)
   messages: Message[];
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: 'datetime' })
   lastMessageAt: Date;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'datetime' })
   updatedAt: Date;
 }

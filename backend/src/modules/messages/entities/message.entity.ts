@@ -1,7 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, JoinColumn } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Conversation } from './conversation.entity';
-
 @Entity('messages')
 export class Message {
   @PrimaryGeneratedColumn('uuid')
@@ -30,15 +29,15 @@ export class Message {
   @Column({ nullable: true, type: 'datetime' })
   readAt: Date;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'datetime' })
   updatedAt: Date;
 
   @Column({ nullable: true })
   attachmentUrl: string;
 
-  @Column({ default: 'text', length: 20 })
+  @Column({ type: 'text', default: 'text' })
   messageType: string; // 'text', 'image', 'location', etc.
 }

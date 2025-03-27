@@ -34,15 +34,13 @@ export class Report {
   reportedId: string;
 
   @Column({
-    type: 'enum',
-    enum: ReportType
+    type: 'text'
   })
   @Index()
   type: ReportType;
 
   @Column({
-    type: 'enum',
-    enum: ReportReason
+    type: 'text'
   })
   reason: ReportReason;
 
@@ -50,8 +48,7 @@ export class Report {
   description: string | null;
 
   @Column({
-    type: 'enum',
-    enum: ReportStatus,
+    type: 'text',
     default: ReportStatus.PENDING
   })
   @Index()
@@ -65,8 +62,7 @@ export class Report {
   handledBy: User | null;
 
   @Column({
-    type: 'enum',
-    enum: ModerationAction,
+    type: 'text',
     nullable: true
   })
   action: ModerationAction | null;
@@ -74,12 +70,12 @@ export class Report {
   @Column({ type: 'text', name: 'admin_notes', nullable: true })
   adminNotes: string | null;
 
-  @Column({ name: 'resolved_at', type: 'timestamp', nullable: true })
+  @Column({ name: 'resolved_at', type: 'datetime', nullable: true })
   resolvedAt: Date | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
   updatedAt: Date;
 }

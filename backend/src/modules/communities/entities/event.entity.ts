@@ -28,13 +28,13 @@ export class Event {
   description: string;
 
   @Column({
-    type: 'varchar',
+    type: 'text',
     default: EventType.IN_PERSON
   })
   type: EventType;
 
   @Column({
-    type: 'varchar',
+    type: 'text',
     default: EventStatus.DRAFT
   })
   status: EventStatus;
@@ -80,15 +80,15 @@ export class Event {
   @OneToMany('EventAttendee', 'event')
   attendees: any[];
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: { to: val => val ? JSON.stringify(val) : null, from: val => val ? JSON.parse(val) : null } })
   settings: object;
 
-@Column({ type: 'simple-array', nullable: true, default: '' })
-tags: string[];
+  @Column({ type: 'text', nullable: true, default: '[]', transformer: { to: val => JSON.stringify(val), from: val => JSON.parse(val) } })
+  tags: string[];
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'datetime' })
   updatedAt: Date;
 }

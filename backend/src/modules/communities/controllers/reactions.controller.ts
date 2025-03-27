@@ -3,7 +3,7 @@ import { Request as ExpressRequest } from '../../../types/express';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { ReactionsService } from '../services/reactions.service';
 import { CreateReactionDto } from '../dto/create-reaction.dto';
-import { ReactionType } from '../entities/post-reaction.entity';
+import { ReactionType } from '../../../types/enums';
 
 @Controller('reactions')
 @UseGuards(JwtAuthGuard)

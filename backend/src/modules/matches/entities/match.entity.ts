@@ -36,7 +36,7 @@ export class Match {
   targetUser: User;
 
   @Column({
-    type: 'varchar',
+    type: 'text',
     default: MatchStatus.PENDING,
   })
   status: MatchStatus;

@@ -1,114 +1,71 @@
-# TrueConnect Database Verification Tools
+# TrueConnect Database Verification and Fixes
 
-This directory contains a set of scripts to verify and troubleshoot database connections in the TrueConnect application. These tools help ensure that the database is correctly connected to the application and that data is being accurately transferred and saved.
+This document outlines the database issues that were encountered and the steps taken to resolve them.
 
-## Available Scripts
+## Issues Identified
 
-1. **verify-database-connection.js** - Main verification script that runs all checks and provides recommendations.
-2. **test-db-connection.js** - Tests database connections for both SQLite and PostgreSQL.
-3. **test-api-connection.js** - Tests API connectivity between frontend and backend.
-4. **fix-database-config.js** - Fixes database configuration discrepancies.
+1. **Missing Tables**: The `profiles` table was referenced but did not exist in the database.
+2. **Column Name Mismatches**: The `community_members` table had a column name issue where `createdAt` was used instead of `joinedAt`.
+3. **Foreign Key Constraints**: There were issues with foreign key constraints that prevented proper deletion of test data.
 
-## Prerequisites
+## Fix Approach
 
-These scripts require Node.js and the following npm packages installed in the backend directory:
-- sqlite3
-- pg
-- node-fetch
+### 1. Database Reset and Schema Recreation
 
-Install the required dependencies by running:
+We created a solution that properly resets the database and allows TypeORM to recreate the schema with proper foreign key constraints:
 
-```bash
-cd TrueConnect/backend
-npm install --save sqlite3 pg node-fetch
-```
+- Created `reset-and-seed.js` that drops all tables in the correct order (child tables first)
+- Allowed TypeORM to recreate the database schema when the application starts
+- Fixed column naming inconsistencies
 
-The verification script will detect missing dependencies and guide you through the installation process if needed.
+### 2. Error with `profile` vs. `users`
 
-## Usage
+The code was trying to access a `profiles` table, but the project architecture appears to have moved profile data directly into the `users` table, which is a better design.
 
-### Run the Main Verification Script
+### 3. Community Members Table
 
-The easiest way to verify and fix your database connection is to run the main verification script from the project root directory (c:/Users/chain/Projects/personal/):
+Fixed issues with the `community_members` table column naming. The entity was defined with `joinedAt` but the script was trying to insert with `createdAt`.
 
-```bash
-# Important: Run from the project root directory
-node TrueConnect/verify-database-connection.js
-```
+## How to Reset and Seed the Database
 
-Note: Do NOT run these scripts from within the TrueConnect/backend directory as this will cause path resolution errors.
+Follow these steps to completely reset and re-seed the database:
 
-This script will:
-1. Check if required dependencies are installed
-2. Test connections to both SQLite and PostgreSQL databases
-3. Verify if there's test data in the database
-4. Offer to fix any detected configuration issues
-5. Test the API connection between frontend and backend
-6. Provide a summary and recommendations
+1. **Reset the database**:
+   ```
+   node reset-and-seed.js
+   ```
+   This will drop all tables.
 
-### Run Individual Scripts
+2. **Restart the NestJS server**:
+   ```
+   cd backend && npm run start:dev
+   ```
+   The server will automatically recreate all tables with proper schema.
 
-You can also run each script individually:
+3. **Seed test data**:
+   ```
+   node seed-test-data.js
+   ```
+   This will create test users, communities, and other data.
 
-#### Test Database Connection
+## Verification
 
-```bash
-node TrueConnect/test-db-connection.js
-```
+After following the steps above, the database should be properly initialized with all the necessary tables and relationships. You can use the following scripts to verify:
 
-This script checks connections to both SQLite and PostgreSQL databases and reports which one is active and accessible.
-
-#### Test API Connection
-
-```bash
-node TrueConnect/test-api-connection.js
-```
-
-This script tests the connection between the frontend and backend, including authentication and data retrieval.
-
-#### Fix Database Configuration
-
-```bash
-node TrueConnect/fix-database-config.js
-```
-
-This script resolves discrepancies between the database configuration in app.module.ts and the environment variables in .env files.
-
-## Common Issues and Solutions
-
-### Database Configuration Mismatch
-
-If the app.module.ts is configured for SQLite, but your .env file contains PostgreSQL credentials, the application might be using the wrong database. The fix-database-config.js script can detect and fix this issue.
-
-### Missing Test Data
-
-If your database connection is successful but there's no test data, you can run the seed-test-data.js script to populate the database with test data:
-
-```bash
-node TrueConnect/seed-test-data.js
-```
-
-### Port Mismatch
-
-If the frontend is configured to connect to a different port than what the backend is running on, the API connection will fail. The fix-database-config.js script can detect and fix this issue.
+- `test-db-connection.js` - Tests basic database connectivity
+- `db-diagnostics.js` - Shows detailed information about tables and columns
+- `test-api-connection.js` - Tests the API endpoints
 
 ## Troubleshooting
 
-If you encounter issues with these scripts:
+If you encounter additional issues:
 
-1. **Missing Dependencies**: Make sure you have Node.js installed and run the verification script, which will offer to install any missing dependencies.
+1. Check foreign key constraints in the database
+2. Verify that column names in entities match column names in database tables
+3. Ensure that the correct tables are being referenced in your code
 
-2. **Database Connection Fails**: Check that the database server is running (for PostgreSQL) or that the SQLite file exists.
+## Further Improvements
 
-3. **API Connection Fails**: Check that the backend server is running. You can start it with `npm run start` in the backend directory.
-
-4. **Permission Issues**: On macOS/Linux, you might need to add execute permissions to the scripts:
-   ```bash
-   chmod +x TrueConnect/verify-database-connection.js
-   ```
-
-## Adding Your Own Tests
-
-If you want to add your own custom tests, you can modify any of these scripts or create new ones. The scripts are designed to be modular and extensible.
-
-For example, to add a new API endpoint test, you can modify the test-api-connection.js file and add a new test function.
+1. Add database migrations for future schema changes
+2. Implement more comprehensive database health checks
+3. Consider containerization for consistent development environments

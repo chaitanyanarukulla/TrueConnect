@@ -32,8 +32,7 @@ export class Notification {
   sender: User | null;
 
   @Column({
-    type: 'enum',
-    enum: NotificationType,
+    type: 'text',
     default: NotificationType.SYSTEM
   })
   type: NotificationType;
@@ -45,31 +44,37 @@ export class Notification {
   content: string;
 
   @Column({
-    type: 'enum',
-    enum: NotificationStatus,
+    type: 'text',
     default: NotificationStatus.UNREAD
   })
   @Index()
   status: NotificationStatus;
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: {
+    to: (value: Record<string, any> | null) => value ? JSON.stringify(value) : null,
+    from: (value: string | null) => value ? JSON.parse(value) : null
+  }})
   data: Record<string, any> | null;
 
   @Column({
-    type: 'simple-array',
+    type: 'text',
     default: NotificationChannel.IN_APP,
+    transformer: {
+      to: (value: NotificationChannel[]) => value.join(','),
+      from: (value: string) => value.split(',') as NotificationChannel[]
+    }
   })
   channels: NotificationChannel[];
 
-  @Column({ name: 'read_at', type: 'timestamp', nullable: true })
+  @Column({ name: 'read_at', type: 'datetime', nullable: true })
   readAt: Date | null;
 
-  @Column({ name: 'action_url', nullable: true, length: 255 })
+  @Column({ name: 'action_url', type: 'varchar', nullable: true, length: 255 })
   actionUrl: string | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
   updatedAt: Date;
 }

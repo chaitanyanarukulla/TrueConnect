@@ -6,8 +6,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import logger from "@/utils/logger"; // Import the logger
+
+// Create a specialized form logger
+const formLogger = logger.createContextLogger('RegisterForm');
 
 // Define schema for registration form
+formLogger.debug('Initializing registration form schema');
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
@@ -55,7 +60,19 @@ export function RegisterForm() {
 
   const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
+    
+    // Log the registration attempt
+    formLogger.info(`Registration form submitted for ${data.email}`, {
+      data: { 
+        email: data.email, 
+        name: data.name, 
+        birthdate: data.birthdate,
+        gender: data.gender
+      }
+    });
+    
     try {
+      formLogger.debug('Calling registerUser from AuthContext');
       await registerUser({
         name: data.name,
         email: data.email,
@@ -65,9 +82,24 @@ export function RegisterForm() {
         acceptTerms: data.acceptTerms
       });
       // The AuthContext handles redirection and storage
-    } catch (error) {
-      console.error("Registration error:", error);
+      formLogger.success(`Registration form processed successfully for ${data.email}`);
+    } catch (error: any) {
+      // Enhanced error logging
+      formLogger.error(`Registration form submission failed: ${error.message}`, {
+        error: {
+          message: error.message,
+          stack: error.stack,
+        },
+        data: {
+          email: data.email,
+          name: data.name,
+          // Don't log password
+          birthdate: data.birthdate,
+          gender: data.gender,
+        }
+      });
     } finally {
+      formLogger.debug('Registration form submission completed, setting isLoading to false');
       setIsLoading(false);
     }
   };

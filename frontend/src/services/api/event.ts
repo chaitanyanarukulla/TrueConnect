@@ -10,7 +10,8 @@ const getAuthHeader = async () => {
   };
 };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+const BASE_URL = API_URL.endsWith('/api') ? API_URL.slice(0, -4) : API_URL;
 
 export interface EventAttendee {
   id: string;
@@ -93,17 +94,26 @@ const eventService = {
       params.tags = Array.isArray(options.tags) ? options.tags.join(',') : options.tags;
     }
     
+    // Properly encode query parameters
     const queryString = new URLSearchParams(params).toString();
-    const response = await fetch(`${API_URL}/events/discover${queryString ? `?${queryString}` : ''}`, {
-      headers: authHeader,
-    });
     
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to discover events');
+    try {
+      const response = await fetch(`${BASE_URL}/api/events/discover${queryString ? `?${queryString}` : ''}`, {
+        method: 'GET',
+        headers: authHeader,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        console.error('Event discovery error:', errorData);
+        throw new Error(errorData.message || `Server error: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error discovering events:', error);
+      throw error;
     }
-    
-    return data;
   },
   async getEvents(
     communityId: string,
@@ -123,7 +133,7 @@ const eventService = {
     if (options?.limit) params.limit = options.limit.toString();
     
     const queryString = new URLSearchParams(params).toString();
-    const response = await fetch(`${API_URL}/communities/${communityId}/events${queryString ? `?${queryString}` : ''}`, {
+    const response = await fetch(`${BASE_URL}/api/communities/${communityId}/events${queryString ? `?${queryString}` : ''}`, {
       headers: authHeader,
     });
     
@@ -138,7 +148,7 @@ const eventService = {
   async getEvent(communityId: string, eventId: string): Promise<Event> {
     const authHeader = await getAuthHeader();
     
-    const response = await fetch(`${API_URL}/communities/${communityId}/events/${eventId}`, {
+    const response = await fetch(`${BASE_URL}/api/communities/${communityId}/events/${eventId}`, {
       headers: authHeader,
     });
     
@@ -159,7 +169,7 @@ const eventService = {
       communityId,
     };
     
-    const response = await fetch(`${API_URL}/communities/${communityId}/events`, {
+    const response = await fetch(`${BASE_URL}/api/communities/${communityId}/events`, {
       method: 'POST',
       headers: authHeader,
       body: JSON.stringify(data),
@@ -181,7 +191,7 @@ const eventService = {
       throw new Error('Community ID mismatch');
     }
     
-    const response = await fetch(`${API_URL}/communities/${communityId}/events/${eventId}`, {
+    const response = await fetch(`${BASE_URL}/api/communities/${communityId}/events/${eventId}`, {
       method: 'PATCH',
       headers: authHeader,
       body: JSON.stringify(updateData),
@@ -198,7 +208,7 @@ const eventService = {
   async deleteEvent(communityId: string, eventId: string): Promise<{ success: boolean }> {
     const authHeader = await getAuthHeader();
     
-    const response = await fetch(`${API_URL}/communities/${communityId}/events/${eventId}`, {
+    const response = await fetch(`${BASE_URL}/api/communities/${communityId}/events/${eventId}`, {
       method: 'DELETE',
       headers: authHeader,
     });
@@ -214,7 +224,7 @@ const eventService = {
   async getAttendees(communityId: string, eventId: string): Promise<EventAttendee[]> {
     const authHeader = await getAuthHeader();
     
-    const response = await fetch(`${API_URL}/communities/${communityId}/events/${eventId}/attendees`, {
+    const response = await fetch(`${BASE_URL}/api/communities/${communityId}/events/${eventId}/attendees`, {
       headers: authHeader,
     });
     
@@ -233,7 +243,7 @@ const eventService = {
   ): Promise<EventAttendee> {
     const authHeader = await getAuthHeader();
     
-    const response = await fetch(`${API_URL}/communities/${communityId}/events/${eventId}/rsvp`, {
+    const response = await fetch(`${BASE_URL}/api/communities/${communityId}/events/${eventId}/rsvp`, {
       method: 'POST',
       headers: authHeader,
       body: JSON.stringify({ status }),
@@ -250,7 +260,7 @@ const eventService = {
   async cancelRsvp(communityId: string, eventId: string): Promise<{ success: boolean }> {
     const authHeader = await getAuthHeader();
     
-    const response = await fetch(`${API_URL}/communities/${communityId}/events/${eventId}/rsvp`, {
+    const response = await fetch(`${BASE_URL}/api/communities/${communityId}/events/${eventId}/rsvp`, {
       method: 'DELETE',
       headers: authHeader,
     });
@@ -266,7 +276,7 @@ const eventService = {
   async getUserRsvp(communityId: string, eventId: string): Promise<EventAttendee | null> {
     const authHeader = await getAuthHeader();
     
-    const response = await fetch(`${API_URL}/communities/${communityId}/events/${eventId}/rsvp`, {
+    const response = await fetch(`${BASE_URL}/api/communities/${communityId}/events/${eventId}/rsvp`, {
       headers: authHeader,
     });
     
@@ -285,7 +295,7 @@ const eventService = {
   async publishEvent(communityId: string, eventId: string): Promise<Event> {
     const authHeader = await getAuthHeader();
     
-    const response = await fetch(`${API_URL}/communities/${communityId}/events/${eventId}/publish`, {
+    const response = await fetch(`${BASE_URL}/api/communities/${communityId}/events/${eventId}/publish`, {
       method: 'PATCH',
       headers: authHeader,
     });
@@ -301,7 +311,7 @@ const eventService = {
   async cancelEvent(communityId: string, eventId: string): Promise<Event> {
     const authHeader = await getAuthHeader();
     
-    const response = await fetch(`${API_URL}/communities/${communityId}/events/${eventId}/cancel`, {
+    const response = await fetch(`${BASE_URL}/api/communities/${communityId}/events/${eventId}/cancel`, {
       method: 'PATCH',
       headers: authHeader,
     });

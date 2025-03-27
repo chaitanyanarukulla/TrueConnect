@@ -23,14 +23,24 @@ import { LoggingMiddleware } from './modules/logging/logging.middleware';
     // Logging module
     LoggingModule,
     
-    // Database connection - Using SQLite for development
+    // Database connection
     TypeOrmModule.forRoot({
       type: 'sqlite',
       database: 'trueconnect.sqlite',
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true, // Auto-create database schema
-      dropSchema: false, // Keep existing data
+      synchronize: true, // Enable temporarily to create schema
       logging: true,
+      retryAttempts: 5,
+      retryDelay: 1000,
+      enableWAL: false, // Disable WAL mode for better compatibility
+      busyErrorRetry: 1000,
+      // SQLite-specific options
+      extra: {
+        // Improve concurrency handling
+        timeout: 30000,
+        // Force SQLite to use simple transactions
+        mode: 'IMMEDIATE'
+      }
     }),
     
     // Application modules

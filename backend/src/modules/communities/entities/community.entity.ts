@@ -33,8 +33,7 @@ export class Community {
   isPrivate: boolean;
 
   @Column({ 
-    type: 'simple-enum', 
-    enum: CommunityCategory, 
+    type: 'text',
     nullable: true 
   })
   category: CommunityCategory;
@@ -57,9 +56,9 @@ export class Community {
   @Column({ default: 0 })
   memberCount: number;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'datetime' })
   updatedAt: Date;
 }

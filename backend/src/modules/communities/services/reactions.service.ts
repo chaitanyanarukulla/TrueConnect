@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { PostReaction, ReactionType } from '../entities/post-reaction.entity';
+import { PostReaction } from '../entities/post-reaction.entity';
+import { ReactionType } from '../../../types/enums';
 import { CommentReaction } from '../entities/comment-reaction.entity';
 import { Post } from '../entities/post.entity';
 import { Comment } from '../entities/comment.entity';

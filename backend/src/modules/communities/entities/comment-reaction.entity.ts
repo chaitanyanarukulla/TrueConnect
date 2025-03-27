@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, JoinColumn, Unique } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Comment } from './comment.entity';
-import { ReactionType } from './post-reaction.entity';
+import { ReactionType } from '../../../types/enums';
 
 @Entity('comment_reactions')
 @Unique(['userId', 'commentId'])

@@ -1,5 +1,5 @@
 import { IsEnum, IsNotEmpty, IsUUID } from 'class-validator';
-import { ReactionType } from '../entities/post-reaction.entity';
+import { ReactionType } from '../../../types/enums';
 
 export class CreateReactionDto {
   @IsEnum(ReactionType)

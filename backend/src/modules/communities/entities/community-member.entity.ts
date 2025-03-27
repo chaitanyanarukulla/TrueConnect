@@ -29,7 +29,7 @@ export class CommunityMember {
   communityId: string;
 
   @Column({
-    type: 'varchar',
+    type: 'text',
     default: CommunityRole.MEMBER
   })
   role: CommunityRole;

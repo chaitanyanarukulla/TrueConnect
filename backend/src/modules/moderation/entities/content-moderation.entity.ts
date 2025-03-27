@@ -25,8 +25,7 @@ export class ContentModeration {
   contentId: string;
 
   @Column({
-    type: 'enum',
-    enum: ReportType
+    type: 'text'
   })
   @Index()
   contentType: ReportType;
@@ -35,8 +34,7 @@ export class ContentModeration {
   content: string;
 
   @Column({
-    type: 'enum',
-    enum: ContentStatus,
+    type: 'text',
     default: ContentStatus.PENDING_REVIEW
   })
   @Index()
@@ -61,8 +59,7 @@ export class ContentModeration {
   contentCreator: User;
 
   @Column({
-    type: 'enum',
-    enum: ModerationAction,
+    type: 'text',
     nullable: true
   })
   action: ModerationAction | null;
@@ -76,12 +73,12 @@ export class ContentModeration {
   @Column({ type: 'float', nullable: true })
   confidenceScore: number | null;
 
-  @Column({ name: 'reviewed_at', type: 'timestamp', nullable: true })
+  @Column({ name: 'reviewed_at', type: 'datetime', nullable: true })
   reviewedAt: Date | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
   updatedAt: Date;
 }
