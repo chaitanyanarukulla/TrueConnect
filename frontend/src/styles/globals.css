@@ -1,0 +1,144 @@
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+    
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    
+    --primary: 354 100% 71%;
+    --primary-foreground: 210 40% 98%;
+    
+    --secondary: 176 56% 55%;
+    --secondary-foreground: 222 47% 11%;
+    
+    --accent: 42 100% 70%;
+    --accent-foreground: 222 47% 11%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    
+    --ring: 215 20% 65%;
+    
+    --radius: 0.5rem;
+  }
+ 
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    
+    --muted: 223 47% 23%;
+    --muted-foreground: 215 20% 65%;
+    
+    --accent: 42 100% 70%;
+    --accent-foreground: 222 47% 11%;
+    
+    --popover: 224 71% 4%;
+    --popover-foreground: 210 40% 98%;
+    
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
+    
+    --card: 224 71% 4%;
+    --card-foreground: 210 40% 98%;
+    
+    --primary: 354 100% 71%;
+    --primary-foreground: 222 47% 11%;
+    
+    --secondary: 176 56% 55%;
+    --secondary-foreground: 222 47% 11%;
+    
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    
+    --ring: 216 34% 17%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold;
+  }
+
+  h1 {
+    @apply text-3xl md:text-4xl;
+  }
+
+  h2 {
+    @apply text-2xl md:text-3xl;
+  }
+
+  h3 {
+    @apply text-xl md:text-2xl;
+  }
+}
+
+@layer components {
+  .card-profile {
+    @apply flex flex-col items-center justify-center rounded-full overflow-hidden;
+  }
+
+  .btn-primary {
+    @apply px-4 py-2 bg-primary text-white rounded-full font-medium shadow-sm hover:bg-primary-600 transition-colors;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 bg-secondary text-white rounded-full font-medium shadow-sm hover:bg-secondary-600 transition-colors;
+  }
+
+  .btn-outline {
+    @apply px-4 py-2 border border-gray-300 rounded-full font-medium shadow-sm hover:bg-gray-50 transition-colors;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+  }
+
+  .avatar-circle {
+    @apply rounded-full border-2 border-primary overflow-hidden;
+  }
+
+  .bottom-navigation {
+    @apply fixed bottom-0 left-0 right-0 flex justify-around items-center bg-white py-3 shadow-lg;
+  }
+
+  .card-match {
+    @apply relative rounded-xl overflow-hidden shadow-md;
+  }
+
+  .heart-icon {
+    @apply text-primary hover:text-primary-600 transition-colors;
+  }
+
+  .message-bubble-received {
+    @apply bg-gray-100 rounded-2xl rounded-tl-sm p-3 max-w-[80%] break-words;
+  }
+
+  .message-bubble-sent {
+    @apply bg-primary text-white rounded-2xl rounded-tr-sm p-3 max-w-[80%] ml-auto break-words;
+  }
+}
