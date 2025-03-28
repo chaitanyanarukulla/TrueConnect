@@ -8,6 +8,8 @@ import { CreateConversationDto } from './dto/create-conversation.dto';
 import { UsersService } from '../users/users.service';
 import { MatchesService } from '../matches/matches.service';
 import { LoggingService } from '../logging/logging.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType, NotificationChannel } from '../../types/enums';
 
 @Injectable()
 export class MessagesService {
@@ -18,7 +20,8 @@ export class MessagesService {
     private readonly conversationRepository: Repository<Conversation>,
     private readonly usersService: UsersService,
     private readonly matchesService: MatchesService,
-    private readonly logger: LoggingService
+    private readonly logger: LoggingService,
+    private readonly notificationsService: NotificationsService
   ) {
     this.logger.setContext('MessagesService');
   }
@@ -262,6 +265,15 @@ export class MessagesService {
     conversation.lastMessageAt = new Date();
     await this.conversationRepository.save(conversation);
     this.logger.debug(`Updated conversation last message time`);
+    
+    // Create notification for the message recipient
+    const recipientId = conversation.user1Id === userId ? conversation.user2Id : conversation.user1Id;
+    try {
+      await this.createMessageNotification(userId, recipientId, conversationId, savedMessage);
+    } catch (error) {
+      this.logger.error(`Failed to create message notification: ${error.message}`, error.stack);
+      // Continue execution even if notification creation fails
+    }
 
     this.logger.log(`Successfully sent message ${savedMessage.id} to conversation ${conversationId}`);
     return savedMessage;
@@ -392,5 +404,61 @@ export class MessagesService {
     return {
       success: true
     };
+  }
+
+  /**
+   * Create a notification for a new message
+   */
+  private async createMessageNotification(
+    senderId: string, 
+    recipientId: string, 
+    conversationId: string, 
+    message: Message
+  ): Promise<void> {
+    this.logger.debug(`Creating message notification for user ${recipientId} from ${senderId}`);
+    
+    try {
+      // Get sender details for personalized notification
+      const sender = await this.usersService.findById(senderId);
+      
+      if (!sender) {
+        this.logger.warn(`Could not find sender details for message notification`);
+        return;
+      }
+      
+      // Prepare content preview - truncate if too long
+      let contentPreview = message.content || '';
+      if (contentPreview.length > 50) {
+        contentPreview = contentPreview.substring(0, 47) + '...';
+      }
+      
+      // Special handling for different message types
+      const messageType = message.messageType || 'text';
+      if (messageType !== 'text') {
+        contentPreview = `[${messageType.toUpperCase()}] ${contentPreview || 'Sent a message'}`;
+      }
+      
+      // Create notification
+      await this.notificationsService.create({
+        recipientId,
+        senderId,
+        type: NotificationType.MESSAGE,
+        title: `Message from ${sender.name || 'Someone'}`,
+        content: contentPreview,
+        channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+        actionUrl: `/dashboard/messages/${conversationId}`,
+        data: {
+          conversationId,
+          messageId: message.id,
+          messageType: message.messageType
+        }
+      });
+      
+      this.logger.debug(`Successfully created message notification for user ${recipientId}`);
+    } catch (error) {
+      this.logger.error(`Failed to create message notification: ${error.message}`, error.stack);
+      // Let the error propagate to the caller which will handle it
+      throw error;
+    }
   }
 }

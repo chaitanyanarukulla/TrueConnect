@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { profileService } from "@/services/api/profile";
+import { ProfilePhotoSection } from "@/features/profiles/components/ProfilePhotoSection";
+import { ProfileForm } from "@/features/profiles/components/ProfileForm";
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -14,10 +16,44 @@ export default function ProfilePage() {
   const [bio, setBio] = useState('');
   const [location, setLocation] = useState('');
   const [lookingFor, setLookingFor] = useState('');
+  const [relationshipType, setRelationshipType] = useState('');
   const [occupation, setOccupation] = useState('');
   const [education, setEducation] = useState('');
   const [interests, setInterests] = useState<string[]>([]);
   const [newInterest, setNewInterest] = useState('');
+  
+  // Lifestyle attributes
+  const [smoking, setSmoking] = useState('');
+  const [drinking, setDrinking] = useState('');
+  const [diet, setDiet] = useState('');
+  const [exercise, setExercise] = useState('');
+  
+  // Religion & Culture
+  const [religion, setReligion] = useState('');
+  const [religiousImportance, setReligiousImportance] = useState('');
+  const [languages, setLanguages] = useState<string[]>([]);
+  const [newLanguage, setNewLanguage] = useState('');
+  
+  // Future plans
+  const [wantChildren, setWantChildren] = useState('');
+  
+  // Pet preferences
+  const [petPreferences, setPetPreferences] = useState<string[]>([]);
+  
+  // Relationship style
+  const [communicationStyle, setCommunicationStyle] = useState('');
+  const [loveLanguages, setLoveLanguages] = useState<string[]>([]);
+  
+  // Personality & values
+  const [personality, setPersonality] = useState<string[]>([]);
+  const [values, setValues] = useState<string[]>([]);
+  
+  // Matching preferences
+  const [ageRangeMin, setAgeRangeMin] = useState(18);
+  const [ageRangeMax, setAgeRangeMax] = useState(99);
+  const [distance, setDistance] = useState(50);
+  const [genderPreferences, setGenderPreferences] = useState<string[]>([]);
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -31,9 +67,35 @@ export default function ProfilePage() {
         setBio(profileData.bio || '');
         setLocation(profileData.location || '');
         setLookingFor(profileData.lookingFor || '');
+        setRelationshipType(profileData.relationshipType || '');
         setOccupation(profileData.occupation || '');
         setEducation(profileData.education || '');
         setInterests(profileData.interests || []);
+        
+        // Lifestyle attributes
+        setSmoking(profileData.lifestyle?.smoking || '');
+        setDrinking(profileData.lifestyle?.drinking || '');
+        setDiet(profileData.lifestyle?.diet || '');
+        setExercise(profileData.lifestyle?.exercise || '');
+        
+        // Personality & values
+        setPersonality(profileData.personality || []);
+        setValues(profileData.values || []);
+        
+        // Matching preferences
+        setAgeRangeMin(profileData.preferences?.ageRange?.min || 18);
+        setAgeRangeMax(profileData.preferences?.ageRange?.max || 99);
+        setDistance(profileData.preferences?.distance || 50);
+        setGenderPreferences(profileData.preferences?.genderPreferences || []);
+        
+        // New attributes
+        setReligion(profileData.religion || '');
+        setReligiousImportance(profileData.religiousImportance || '');
+        setLanguages(profileData.languages || []);
+        setWantChildren(profileData.wantChildren || '');
+        setPetPreferences(profileData.petPreferences || []);
+        setCommunicationStyle(profileData.communicationStyle || '');
+        setLoveLanguages(profileData.loveLanguages || []);
       } catch (error) {
         console.error('Error fetching profile:', error);
         setError('Failed to load profile data. Please try again later.');
@@ -56,9 +118,31 @@ export default function ProfilePage() {
         bio,
         location,
         lookingFor,
+        relationshipType,
         occupation,
         education,
         interests,
+        lifestyle: {
+          smoking,
+          drinking,
+          diet,
+          exercise
+        },
+        personality,
+        values,
+        preferences: {
+          ageRange: { min: ageRangeMin, max: ageRangeMax },
+          distance,
+          genderPreferences
+        },
+        // New attributes
+        religion,
+        religiousImportance,
+        languages,
+        wantChildren,
+        petPreferences,
+        communicationStyle,
+        loveLanguages
       });
       
       setProfile(updatedProfile);
@@ -85,6 +169,17 @@ export default function ProfilePage() {
 
   const handleRemoveInterest = (interest: string) => {
     setInterests(interests.filter(i => i !== interest));
+  };
+  
+  const handleAddLanguage = () => {
+    if (newLanguage.trim() && !languages.includes(newLanguage.trim())) {
+      setLanguages([...languages, newLanguage.trim()]);
+      setNewLanguage('');
+    }
+  };
+
+  const handleRemoveLanguage = (language: string) => {
+    setLanguages(languages.filter(l => l !== language));
   };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -141,185 +236,86 @@ export default function ProfilePage() {
       
       <div className="flex flex-col md:flex-row gap-8">
         {/* Profile photo section */}
-        <div className="w-full md:w-1/3">
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <div className="flex flex-col items-center">
-              <div className="w-40 h-40 rounded-full overflow-hidden mb-4 bg-gray-100 relative">
-                {profile?.profilePicture ? (
-                  <img 
-                    src={profile.profilePicture} 
-                    alt="Profile" 
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="flex items-center justify-center w-full h-full bg-gray-200 text-gray-400">
-                    No Photo
-                  </div>
-                )}
-              </div>
-              
-              <div className="w-full">
-                <label className="btn-outline w-full block text-center py-2 px-4 cursor-pointer">
-                  Upload Photo
-                  <input 
-                    type="file" 
-                    className="hidden" 
-                    accept="image/*"
-                    onChange={handlePhotoUpload}
-                    disabled={isSubmitting}
-                  />
-                </label>
-              </div>
-              
-              <div className="mt-6 w-full">
-                <h3 className="text-lg font-semibold mb-2">{user?.name}</h3>
-                <p className="text-gray-600 text-sm mb-1">
-                  {profile?.email}
-                </p>
-                {profile?.location && (
-                  <p className="text-gray-600 text-sm">
-                    {profile.location}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        <ProfilePhotoSection 
+          profile={profile}
+          isSubmitting={isSubmitting}
+          onPhotoUpload={handlePhotoUpload}
+        />
         
         {/* Profile form section */}
         <div className="w-full md:w-2/3">
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-1">
-                  Bio
-                </label>
-                <textarea
-                  id="bio"
-                  rows={4}
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder="Tell us about yourself..."
-                  disabled={isSubmitting}
-                />
-              </div>
+            <ProfileForm
+              // Basic info
+              bio={bio}
+              location={location}
+              lookingFor={lookingFor}
+              relationshipType={relationshipType}
+              occupation={occupation}
+              education={education}
               
-              <div className="mb-4">
-                <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
-                  Location
-                </label>
-                <input
-                  id="location"
-                  type="text"
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="Your city, country"
-                  disabled={isSubmitting}
-                />
-              </div>
+              // Lifestyle
+              smoking={smoking}
+              drinking={drinking}
+              diet={diet}
+              exercise={exercise}
               
-              <div className="mb-4">
-                <label htmlFor="lookingFor" className="block text-sm font-medium text-gray-700 mb-1">
-                  Looking For
-                </label>
-                <input
-                  id="lookingFor"
-                  type="text"
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                  value={lookingFor}
-                  onChange={(e) => setLookingFor(e.target.value)}
-                  placeholder="What are you looking for in a relationship?"
-                  disabled={isSubmitting}
-                />
-              </div>
+              // Religion & Culture
+              religion={religion}
+              religiousImportance={religiousImportance}
+              languages={languages}
+              newLanguage={newLanguage}
               
-              <div className="mb-4">
-                <label htmlFor="occupation" className="block text-sm font-medium text-gray-700 mb-1">
-                  Occupation
-                </label>
-                <input
-                  id="occupation"
-                  type="text"
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                  value={occupation}
-                  onChange={(e) => setOccupation(e.target.value)}
-                  placeholder="What do you do?"
-                  disabled={isSubmitting}
-                />
-              </div>
+              // Future plans
+              wantChildren={wantChildren}
               
-              <div className="mb-4">
-                <label htmlFor="education" className="block text-sm font-medium text-gray-700 mb-1">
-                  Education
-                </label>
-                <input
-                  id="education"
-                  type="text"
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                  value={education}
-                  onChange={(e) => setEducation(e.target.value)}
-                  placeholder="Your education background"
-                  disabled={isSubmitting}
-                />
-              </div>
+              // Pet preferences
+              petPreferences={petPreferences}
               
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Interests
-                </label>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {interests.map((interest, index) => (
-                    <div key={index} className="bg-gray-100 px-3 py-1 rounded-full flex items-center">
-                      <span className="text-sm">{interest}</span>
-                      <button
-                        type="button"
-                        className="ml-2 text-gray-500 hover:text-red-500"
-                        onClick={() => handleRemoveInterest(interest)}
-                        disabled={isSubmitting}
-                      >
-                        &times;
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex">
-                  <input
-                    type="text"
-                    className="flex-1 p-2 border border-gray-300 rounded-l-md"
-                    value={newInterest}
-                    onChange={(e) => setNewInterest(e.target.value)}
-                    placeholder="Add an interest"
-                    disabled={isSubmitting}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddInterest();
-                      }
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="bg-primary text-white px-4 py-2 rounded-r-md"
-                    onClick={handleAddInterest}
-                    disabled={isSubmitting}
-                  >
-                    Add
-                  </button>
-                </div>
-              </div>
+              // Relationship style
+              communicationStyle={communicationStyle}
+              loveLanguages={loveLanguages}
               
-              <div className="mt-6">
-                <button
-                  type="submit"
-                  className="w-full btn-primary py-3"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Saving..." : "Save Profile"}
-                </button>
-              </div>
-            </form>
+              // Personality & values
+              personality={personality}
+              values={values}
+              
+              // Interests
+              interests={interests}
+              newInterest={newInterest}
+              
+              // Form state
+              isSubmitting={isSubmitting}
+              
+              // Setters
+              setBio={setBio}
+              setLocation={setLocation}
+              setLookingFor={setLookingFor}
+              setRelationshipType={setRelationshipType}
+              setOccupation={setOccupation}
+              setEducation={setEducation}
+              setSmoking={setSmoking}
+              setDrinking={setDrinking}
+              setDiet={setDiet}
+              setExercise={setExercise}
+              setReligion={setReligion}
+              setReligiousImportance={setReligiousImportance}
+              setNewLanguage={setNewLanguage}
+              setWantChildren={setWantChildren}
+              setPetPreferences={setPetPreferences}
+              setCommunicationStyle={setCommunicationStyle}
+              setLoveLanguages={setLoveLanguages}
+              setPersonality={setPersonality}
+              setValues={setValues}
+              setNewInterest={setNewInterest}
+              
+              // Handlers
+              handleAddLanguage={handleAddLanguage}
+              handleRemoveLanguage={handleRemoveLanguage}
+              handleAddInterest={handleAddInterest}
+              handleRemoveInterest={handleRemoveInterest}
+              handleSubmit={handleSubmit}
+            />
           </div>
         </div>
       </div>

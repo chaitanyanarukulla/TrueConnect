@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { matchService, MatchData } from "@/services/api/match";
 import Link from "next/link";
+import ProfileImage from "@/components/ui/ProfileImage";
 
 export default function MatchesPage() {
   const { user } = useAuth();
@@ -76,18 +77,13 @@ export default function MatchesPage() {
             key={match.matchId} 
             className="bg-white rounded-lg shadow-md overflow-hidden transition-transform hover:scale-[1.02]"
           >
-            <div className="h-48 bg-gray-200 relative">
-              {match.user.profilePicture ? (
-                <img 
-                  src={match.user.profilePicture} 
-                  alt={match.user.name} 
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gray-300">
-                  <span className="text-gray-500 text-4xl">{match.user.name.charAt(0)}</span>
-                </div>
-              )}
+            <div className="h-48 bg-gray-200 relative flex items-center justify-center">
+              <ProfileImage 
+                src={match.user.profilePicture} 
+                alt={match.user.name} 
+                size="lg"
+                className="shadow-md"
+              />
               
               {match.isSuperLike && (
                 <div className="absolute top-3 right-3 bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full">

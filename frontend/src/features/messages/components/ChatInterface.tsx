@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import messageService from '@/services/api/message';
+import { Conversation } from '@/types/conversation';
 
 interface Message {
   id: string;
@@ -12,18 +13,6 @@ interface Message {
   isRead: boolean;
   messageType: string;
   attachmentUrl?: string;
-}
-
-interface Conversation {
-  id: string;
-  user1Id: string;
-  user2Id: string;
-  otherUser?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    profilePhoto?: string;
-  };
 }
 
 interface ChatInterfaceProps {

@@ -15,8 +15,8 @@ export default function Home() {
         <div className="w-full max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden mb-8">
           <div className="relative h-64 w-full">
             <Image
-              src="/landing-image.jpg"
-              alt="People connecting"
+              src="/profiles/landing-page.png.png"
+              alt="TrueConnect - Find meaningful connections"
               fill
               style={{ objectFit: "cover" }}
               priority

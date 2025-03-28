@@ -20,6 +20,8 @@ import { EventAttendee } from './entities/event-attendee.entity';
 import { EventsService } from './services/events.service';
 import { EventsController } from './controllers/events.controller';
 import { EventDiscoveryController } from './controllers/event-discovery.controller';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { LoggingModule } from '../logging/logging.module';
 
 @Module({
   imports: [
@@ -34,6 +36,8 @@ import { EventDiscoveryController } from './controllers/event-discovery.controll
       EventAttendee
     ]),
     UsersModule,
+    NotificationsModule,
+    LoggingModule,
   ],
   controllers: [
     CommunitiesController, 

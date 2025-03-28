@@ -47,6 +47,10 @@ export class Match {
     interests: number;
     preferences: number;
     location: number;
+    lifestyle?: number;
+    values?: number;
+    personality?: number;
+    relationshipGoals?: number;
   };
 
   @Column({ default: false })

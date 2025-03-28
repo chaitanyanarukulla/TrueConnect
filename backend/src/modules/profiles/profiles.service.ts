@@ -145,6 +145,15 @@ export class ProfilesService {
       lookingFor: user.lookingFor || '',
       occupation: user.occupation || '',
       education: user.education || '',
+      relationshipType: user.relationshipType || '',
+      lifestyle: user.lifestyle || {
+        smoking: '',
+        drinking: '',
+        diet: '',
+        exercise: ''
+      },
+      personality: user.personality || [],
+      values: user.values || [],
       privacySettings: user.privacySettings || {
         showLocation: true,
         showAge: true,

@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import NotificationBadge from "@/features/notifications/components/NotificationBadge";
+import ProfileImage from "@/components/ui/ProfileImage";
+import { useAuth } from "@/context/AuthContext";
+import { profileService } from "@/services/api/profile";
 
 export default function DashboardLayout({
   children,
@@ -12,6 +15,24 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const [profile, setProfile] = useState<any>(null);
+  
+  // Fetch user profile for the avatar
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        if (user) {
+          const profileData = await profileService.getCurrentProfile();
+          setProfile(profileData);
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
   
   // Navigation items
   const navItems = [
@@ -53,7 +74,16 @@ export default function DashboardLayout({
                       </>
                     )}
                     {item.icon === 'users' && <span>👥</span>}
-                    {item.icon === 'user' && <span>👤</span>}
+                    {item.icon === 'user' && (
+                      profile?.profilePicture ? 
+                        <ProfileImage 
+                          src={profile.profilePicture}
+                          alt={user?.name || "Profile"}
+                          size="sm"
+                          className="border border-gray-200"
+                        /> : 
+                        <span>👤</span>
+                    )}
                   </div>
                   <span className="ml-3 hidden md:block">{item.name}</span>
                 </Link>
@@ -86,7 +116,16 @@ export default function DashboardLayout({
                     </>
                   )}
                   {item.icon === 'users' && <span>👥</span>}
-                  {item.icon === 'user' && <span>👤</span>}
+                  {item.icon === 'user' && (
+                    profile?.profilePicture ? 
+                      <ProfileImage 
+                        src={profile.profilePicture}
+                        alt={user?.name || "Profile"}
+                        size="sm"
+                        className="border border-gray-200"
+                      /> : 
+                      <span>👤</span>
+                  )}
                 </div>
                 <span className="text-xs">{item.name}</span>
               </Link>

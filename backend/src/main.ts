@@ -70,8 +70,41 @@ async function bootstrap() {
   
   loggingService.debug('Configured Swagger documentation');
   
-  // Global prefix for all routes
-  app.setGlobalPrefix('api');
+  // Global prefix for all routes with proper path rewriting
+  app.setGlobalPrefix('api', {
+    exclude: ['/'], // Exclude root path from prefix
+  });
+  
+  // Add middleware to redirect root requests to their proper API routes
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    // Check if request is to the root path but has query params that match our API endpoints
+    if (req.path === '/' && req.url !== '/') {
+      // Extract the URL path including query parameters
+      const urlWithParams = req.url;
+      
+      // Check for known API patterns in the query string and map them
+      if (urlWithParams.includes('status=published') && urlWithParams.includes('upcoming=true')) {
+        req.url = `/api/events/discover${urlWithParams}`;
+      } else if (urlWithParams.includes('page=') && urlWithParams.includes('limit=10')) {
+        // Handle conversations requests
+        if (req.headers.accept?.includes('application/json')) {
+          req.url = `/api/messages/conversations${urlWithParams}`;
+        } else {
+          req.url = `/api/communities${urlWithParams}`;
+        }
+      } else {
+        // Map other root requests to their likely API endpoints based on headers
+        if (req.headers['sec-ch-ua-mobile'] === '?0' && !req.headers['content-type']) {
+          req.url = '/api/profiles/me';
+        } else if (!req.headers['content-type'] || req.headers['content-type'].includes('application/json')) {
+          req.url = '/api/matches';
+        } else {
+          req.url = '/api/notifications/unread-count';
+        }
+      }
+    }
+    next();
+  });
   
   // Start the server
   const port = parseInt(process.env.PORT || '3001', 10);

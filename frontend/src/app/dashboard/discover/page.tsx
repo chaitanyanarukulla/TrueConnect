@@ -1,11 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { FaCalendarAlt, FaFilter, FaClock, FaMapMarkerAlt, FaUserFriends, FaTag, FaSearch } from "react-icons/fa";
+import Link from "next/link";
+import { 
+  FaCalendarAlt, FaFilter, FaClock, FaMapMarkerAlt, FaUserFriends, 
+  FaTag, FaSearch, FaFire, FaSort, FaCompass, FaUsers, 
+  FaArrowUp, FaThumbsUp, FaMedal, FaStar, FaHeart
+} from "react-icons/fa";
 import { format } from "date-fns";
 import eventService, { Event, EventDiscoveryOptions, PaginatedResponse } from "@/services/api/event";
 import { EventType, EventStatus } from "@/modules/communities/dto/create-event.dto";
+import { CommunityCategory } from "@/types/enums";
+import CommunityAvatar from "@/components/ui/CommunityAvatar";
+import EventCard from "@/components/ui/EventCard";
 
 export default function DiscoverPage() {
   const { user } = useAuth();
@@ -18,27 +26,91 @@ export default function DiscoverPage() {
     page: 1,
     limit: 9,
     status: EventStatus.PUBLISHED,
+    sort: 'date',
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
+  const [locationEnabled, setLocationEnabled] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [locationDistance, setLocationDistance] = useState(10); // Default 10km
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [showTrending, setShowTrending] = useState(true);
+  const [trendingEvents, setTrendingEvents] = useState<Event[]>([]);
+  const trendingRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchEvents();
-  }, [filters]);
+    
+    // Only fetch trending events on initial load
+    if (showTrending) {
+      fetchTrendingEvents();
+    }
+  }, [filters, userLocation]);
+
+  // Get user's location
+  const getUserLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by your browser");
+      return;
+    }
+    
+    setIsGettingLocation(true);
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setUserLocation({ lat: latitude, lng: longitude });
+        setLocationEnabled(true);
+        setIsGettingLocation(false);
+        setLocationError(null);
+      },
+      (error) => {
+        setLocationError("Unable to retrieve your location");
+        setIsGettingLocation(false);
+        console.error("Geolocation error:", error);
+      }
+    );
+  };
+
+  // Fetch trending events (most popular events)
+  const fetchTrendingEvents = async () => {
+    try {
+      const result = await eventService.discoverEvents({
+        upcoming: true,
+        limit: 4,
+        sort: 'popularity',
+        status: EventStatus.PUBLISHED,
+      });
+      
+      setTrendingEvents(result.data);
+    } catch (err) {
+      console.error('Error fetching trending events:', err);
+    }
+  };
 
   const fetchEvents = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Prepare filter options including searchTerm as a tag if available
+      // Prepare filter options including searchTerm as a search query
       const filterOptions: EventDiscoveryOptions = {
         ...filters,
       };
       
-      // If we have a search term, treat it as a tag filter
+      // Add search term if available
       if (searchTerm.trim()) {
-        filterOptions.tags = searchTerm.trim();
+        filterOptions.search = searchTerm.trim();
+      }
+      
+      // Add location if enabled
+      if (locationEnabled && userLocation) {
+        filterOptions.location = {
+          lat: userLocation.lat,
+          lng: userLocation.lng,
+          distance: locationDistance
+        };
       }
       
       const result = await eventService.discoverEvents(filterOptions);
@@ -52,16 +124,32 @@ export default function DiscoverPage() {
     }
   };
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
+  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     
     if (type === 'checkbox') {
       const checkbox = e.target as HTMLInputElement;
       setFilters(prev => ({ ...prev, [name]: checkbox.checked }));
-    } else if (type === 'select-one') {
-      setFilters(prev => ({ ...prev, [name]: value }));
+    } else if (type === 'range') {
+      const range = e.target as HTMLInputElement;
+      setLocationDistance(parseInt(range.value));
     } else {
       setFilters(prev => ({ ...prev, [name]: value }));
+    }
+  };
+  
+  const handleLocationToggle = () => {
+    if (!locationEnabled) {
+      getUserLocation();
+    } else {
+      setLocationEnabled(false);
+      setUserLocation(null);
+    }
+  };
+
+  const scrollToTrending = () => {
+    if (trendingRef.current) {
+      trendingRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
@@ -88,21 +176,114 @@ export default function DiscoverPage() {
         return null;
     }
   };
+  
+  const getCommunityBadge = (event: Event) => {
+    if (!event.community) return null;
+    
+    let badgeColor = "bg-blue-50 text-blue-600";
+    
+    // Adjust color based on category if available
+    if (event.community.category) {
+      switch (event.community.category) {
+        case CommunityCategory.SPORTS:
+          badgeColor = "bg-green-50 text-green-600";
+          break;
+        case CommunityCategory.ARTS:
+          badgeColor = "bg-purple-50 text-purple-600";
+          break;
+        case CommunityCategory.TECHNOLOGY:
+          badgeColor = "bg-blue-50 text-blue-600";
+          break;
+        case CommunityCategory.FOOD:
+          badgeColor = "bg-orange-50 text-orange-600";
+          break;
+        case CommunityCategory.TRAVEL:
+          badgeColor = "bg-teal-50 text-teal-600";
+          break;
+        case CommunityCategory.EDUCATION:
+          badgeColor = "bg-indigo-50 text-indigo-600";
+          break;
+        case CommunityCategory.MUSIC:
+          badgeColor = "bg-pink-50 text-pink-600";
+          break;
+        default:
+          badgeColor = "bg-blue-50 text-blue-600";
+      }
+    }
+    
+    return (
+      <span className={`text-xs font-medium ${badgeColor} px-2 py-1 rounded-full`}>
+        {event.community.name}
+      </span>
+    );
+  };
 
   return (
     <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-        <h1 className="text-3xl font-bold text-primary">Discover Events</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-primary">Discover</h1>
+          <p className="text-gray-500 mt-1">Find events and people that match your interests</p>
+        </div>
         
-        <button
-          className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          onClick={() => setFilterOpen(!filterOpen)}
-        >
-          <FaFilter className="mr-2 -ml-1 h-4 w-4" />
-          Filters
-        </button>
+        {/* Discovery Type Tabs */}
+        <div className="flex flex-col gap-4 mt-4 sm:mt-0">
+          <div className="flex border border-gray-200 rounded-lg overflow-hidden">
+            <Link 
+              href="/dashboard/discover" 
+              className="flex-1 px-4 py-2 text-center text-sm font-medium bg-primary text-white"
+            >
+              Events
+            </Link>
+            <Link 
+              href="/dashboard/discover/profiles" 
+              className="flex-1 px-4 py-2 text-center text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200"
+            >
+              People
+            </Link>
+          </div>
+          
+          <div className="flex gap-2">
+            <button
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              onClick={() => setFilterOpen(!filterOpen)}
+            >
+              <FaFilter className="mr-2 -ml-1 h-4 w-4" />
+              Filters
+            </button>
+            
+            {showTrending && (
+              <button
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                onClick={scrollToTrending}
+              >
+                <FaFire className="mr-2 -ml-1 h-4 w-4" />
+                Trending
+              </button>
+            )}
+          </div>
+        </div>
       </div>
       
+      {/* Trending Events Section */}
+      {showTrending && trendingEvents.length > 0 && (
+        <div ref={trendingRef} className="mb-8">
+          <div className="flex items-center mb-4">
+            <FaFire className="text-red-500 mr-2" />
+            <h2 className="text-xl font-bold">Trending Events</h2>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {trendingEvents.map((event) => (
+              <EventCard 
+                key={`trending-${event.id}`}
+                event={event}
+                className="h-full"
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Search and Filter Bar */}
       <div className={`bg-white shadow-md rounded-lg p-4 mb-6 transition-all duration-300 ${filterOpen ? 'block' : 'hidden'}`}>
         <form onSubmit={handleSearchSubmit} className="mb-4">
@@ -130,7 +311,7 @@ export default function DiscoverPage() {
           </div>
         </form>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Event Type</label>
             <select
@@ -146,6 +327,42 @@ export default function DiscoverPage() {
             </select>
           </div>
           
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <select
+              name="category"
+              value={filters.category || ''}
+              onChange={handleFilterChange}
+              className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+            >
+              <option value="">All categories</option>
+              <option value={CommunityCategory.SPORTS}>Sports</option>
+              <option value={CommunityCategory.ARTS}>Arts</option>
+              <option value={CommunityCategory.TECHNOLOGY}>Technology</option>
+              <option value={CommunityCategory.FOOD}>Food</option>
+              <option value={CommunityCategory.TRAVEL}>Travel</option>
+              <option value={CommunityCategory.EDUCATION}>Education</option>
+              <option value={CommunityCategory.MUSIC}>Music</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+            <select
+              name="sort"
+              value={filters.sort || 'date'}
+              onChange={handleFilterChange}
+              className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+            >
+              <option value="date">Date (Soonest)</option>
+              <option value="popularity">Popularity</option>
+              <option value="relevance">Relevance</option>
+              {locationEnabled && <option value="distance">Distance</option>}
+            </select>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
           <div className="flex items-center">
             <input
               type="checkbox"
@@ -160,38 +377,160 @@ export default function DiscoverPage() {
             </label>
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Results per page</label>
-            <select
-              name="limit"
-              value={filters.limit || 9}
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="myCommunitiesOnly"
+              name="myCommunitiesOnly"
+              checked={!!filters.myCommunitiesOnly}
               onChange={handleFilterChange}
-              className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-            >
-              <option value={9}>9</option>
-              <option value={18}>18</option>
-              <option value={27}>27</option>
-            </select>
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label htmlFor="myCommunitiesOnly" className="ml-2 block text-sm text-gray-700">
+              From my communities only
+            </label>
           </div>
           
-          <div>
-            <button
-              onClick={() => {
-                setFilters({
-                  upcoming: true,
-                  page: 1,
-                  limit: 9,
-                  status: EventStatus.PUBLISHED,
-                });
-                setSearchTerm('');
-              }}
-              className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Reset filters
-            </button>
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="isAttending"
+              name="isAttending"
+              checked={!!filters.isAttending}
+              onChange={handleFilterChange}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label htmlFor="isAttending" className="ml-2 block text-sm text-gray-700">
+              Events I'm attending
+            </label>
           </div>
         </div>
+        
+        {/* Location-based search */}
+        <div className="mt-4 border-t pt-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <FaMapMarkerAlt className="text-red-500 mr-2" />
+              <h3 className="font-medium">Location-based search</h3>
+            </div>
+            <button
+              type="button"
+              onClick={handleLocationToggle}
+              className={`px-3 py-1 rounded-full text-xs font-medium ${
+                locationEnabled 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-gray-100 text-gray-800'
+              }`}
+            >
+              {isGettingLocation 
+                ? 'Getting location...' 
+                : locationEnabled 
+                  ? 'Enabled' 
+                  : 'Enable'}
+            </button>
+          </div>
+          
+          {locationError && (
+            <p className="mt-1 text-sm text-red-600">{locationError}</p>
+          )}
+          
+          {locationEnabled && userLocation && (
+            <div className="mt-3">
+              <div className="flex justify-between items-center mb-1">
+                <label htmlFor="distance" className="text-sm text-gray-700">
+                  Distance: {locationDistance} km
+                </label>
+              </div>
+              <input
+                type="range"
+                id="distance"
+                name="distance"
+                min="1"
+                max="100"
+                value={locationDistance}
+                onChange={handleFilterChange}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>1 km</span>
+                <span>50 km</span>
+                <span>100 km</span>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        <div className="mt-4 flex justify-end">
+          <button
+            onClick={() => {
+              setFilters({
+                upcoming: true,
+                page: 1,
+                limit: 9,
+                status: EventStatus.PUBLISHED,
+                sort: 'date',
+              });
+              setSearchTerm('');
+              setLocationEnabled(false);
+              setUserLocation(null);
+            }}
+            className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            Reset all filters
+          </button>
+        </div>
       </div>
+      
+      {/* Filter Summary - only show if filters are active */}
+      {(searchTerm || 
+        filters.type || 
+        filters.category || 
+        filters.myCommunitiesOnly || 
+        filters.isAttending || 
+        locationEnabled) && (
+        <div className="bg-blue-50 p-3 rounded-lg mb-6 flex flex-wrap items-center gap-2">
+          <span className="text-blue-700 font-medium">Active filters:</span>
+          
+          {searchTerm && (
+            <span className="bg-white text-blue-600 px-2 py-1 rounded-full text-xs font-medium flex items-center">
+              <FaSearch className="mr-1" /> {searchTerm}
+            </span>
+          )}
+
+          {filters.type && (
+            <span className="bg-white text-blue-600 px-2 py-1 rounded-full text-xs font-medium flex items-center">
+              {filters.type === EventType.ONLINE ? <FaCompass className="mr-1" /> : 
+               filters.type === EventType.IN_PERSON ? <FaMapMarkerAlt className="mr-1" /> : 
+               <FaUsers className="mr-1" />} 
+              {filters.type}
+            </span>
+          )}
+
+          {filters.category && (
+            <span className="bg-white text-blue-600 px-2 py-1 rounded-full text-xs font-medium flex items-center">
+              <FaTag className="mr-1" /> {filters.category}
+            </span>
+          )}
+
+          {filters.myCommunitiesOnly && (
+            <span className="bg-white text-blue-600 px-2 py-1 rounded-full text-xs font-medium flex items-center">
+              <FaUsers className="mr-1" /> My communities
+            </span>
+          )}
+
+          {filters.isAttending && (
+            <span className="bg-white text-blue-600 px-2 py-1 rounded-full text-xs font-medium flex items-center">
+              <FaCalendarAlt className="mr-1" /> Attending
+            </span>
+          )}
+          
+          {locationEnabled && (
+            <span className="bg-white text-blue-600 px-2 py-1 rounded-full text-xs font-medium flex items-center">
+              <FaMapMarkerAlt className="mr-1" /> Within {locationDistance}km
+            </span>
+          )}
+        </div>
+      )}
       
       {/* Events Grid */}
       {loading ? (
@@ -214,80 +553,11 @@ export default function DiscoverPage() {
         <>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {events.map((event) => (
-              <div
+              <EventCard 
                 key={event.id}
-                className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200"
-              >
-                <a 
-                  href={`/dashboard/communities/${event.communityId}/events/${event.id}`}
-                  className="block"
-                >
-                  <div className="relative h-48 bg-gray-200 overflow-hidden">
-                    {event.imageUrl ? (
-                      <img
-                        src={event.imageUrl}
-                        alt={event.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-full bg-gradient-to-r from-blue-400 to-indigo-500 text-white">
-                        <h3 className="text-xl font-bold text-center px-4">{event.title}</h3>
-                      </div>
-                    )}
-                    <div className="absolute top-2 right-2 flex flex-col gap-2">
-                      {getEventTypeIcon(event.type)}
-                    </div>
-                  </div>
-                  
-                  <div className="px-4 py-4">
-                    <div className="flex items-center mb-1">
-                      {/* Display community info */}
-                      <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-                        From Community
-                      </span>
-                    </div>
-                    
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{event.title}</h3>
-                    
-                    <div className="mt-3 space-y-2">
-                      <div className="flex items-center text-sm text-gray-500">
-                        <FaClock className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                        <span>
-                          {format(new Date(event.startTime), 'MMM d, yyyy • h:mm a')}
-                        </span>
-                      </div>
-                      
-                      {event.location && (
-                        <div className="flex items-center text-sm text-gray-500">
-                          <FaMapMarkerAlt className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                          <span>{event.location}</span>
-                        </div>
-                      )}
-                      
-                      {event.attendeeLimit > 0 && (
-                        <div className="flex items-center text-sm text-gray-500">
-                          <FaUserFriends className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                          <span>
-                            {event.attendeeCount}/{event.attendeeLimit} attendees
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {event.tags?.map((tag, i) => (
-                        <span
-                          key={i}
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                        >
-                          <FaTag className="h-2 w-2 mr-1" />
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </a>
-              </div>
+                event={event}
+                className="h-full"
+              />
             ))}
           </div>
           

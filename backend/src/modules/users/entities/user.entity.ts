@@ -69,6 +69,23 @@ export class User {
 
   @Column({ nullable: true })
   education: string;
+  
+  @Column({ nullable: true })
+  relationshipType: string;
+  
+  @Column({ type: 'text', nullable: true, transformer: { to: val => val ? JSON.stringify(val) : null, from: val => val ? JSON.parse(val) : null } })
+  lifestyle: {
+    smoking?: string;
+    drinking?: string;
+    diet?: string;
+    exercise?: string;
+  };
+  
+  @Column({ type: 'simple-array', nullable: true })
+  personality: string[];
+  
+  @Column({ type: 'simple-array', nullable: true })
+  values: string[];
 
   @Column({ type: 'text', nullable: true, transformer: { to: val => val ? JSON.stringify(val) : null, from: val => val ? JSON.parse(val) : null } })
   privacySettings: {

@@ -2,10 +2,13 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Comment, CommentStatus } from '../entities/comment.entity';
-import { Post } from '../entities/post.entity';
+import { Post, PostType } from '../entities/post.entity';
 import { CommunityMember, CommunityRole } from '../entities/community-member.entity';
 import { CreateCommentDto } from '../dto/create-comment.dto';
 import { UsersService } from '../../users/users.service';
+import { NotificationsService } from '../../notifications/notifications.service';
+import { LoggingService } from '../../logging/logging.service';
+import { NotificationType, NotificationChannel } from '../../../types/enums';
 
 @Injectable()
 export class CommentsService {
@@ -20,7 +23,11 @@ export class CommentsService {
     private communityMemberRepository: Repository<CommunityMember>,
     
     private usersService: UsersService,
-  ) {}
+    private notificationsService: NotificationsService,
+    private logger: LoggingService,
+  ) {
+    this.logger.setContext('CommentsService');
+  }
 
   async createComment(userId: string, createCommentDto: CreateCommentDto): Promise<Comment> {
     // Check if user exists
@@ -82,6 +89,45 @@ export class CommentsService {
     // Increment comment count for post
     post.commentCount += 1;
     await this.postRepository.save(post);
+    
+    // Send notification to the post author if not the same as comment author
+    try {
+      if (post.authorId !== userId) {
+        // Determine an appropriate post title for the notification
+        let postTitle = 'a post';
+        if (post.type === PostType.LINK && post.linkTitle) {
+          postTitle = post.linkTitle;
+        } else if (post.content) {
+          // Use first 30 chars of content as "title" for text posts
+          postTitle = post.content.length > 30 
+            ? post.content.substring(0, 27) + '...' 
+            : post.content;
+        }
+        
+        await this.createCommentNotification(userId, post.authorId, post.id, savedComment, postTitle);
+      }
+      
+      // If it's a reply, also notify the parent comment author
+      if (createCommentDto.parentId) {
+        const parentComment = await this.commentRepository.findOne({
+          where: { id: createCommentDto.parentId },
+        });
+        
+        if (parentComment && parentComment.authorId !== userId) {
+          await this.createCommentNotification(
+            userId, 
+            parentComment.authorId, 
+            post.id, 
+            savedComment, 
+            'your comment', 
+            true
+          );
+        }
+      }
+    } catch (error) {
+      this.logger.error(`Failed to create comment notification: ${error.message}`, error.stack);
+      // Continue execution even if notification creation fails
+    }
 
     return savedComment;
   }
@@ -168,6 +214,65 @@ export class CommentsService {
     comment.isEdited = true;
     
     return this.commentRepository.save(comment);
+  }
+
+  /**
+   * Create a notification for a new comment
+   */
+  private async createCommentNotification(
+    senderId: string,
+    recipientId: string,
+    postId: string,
+    comment: Comment,
+    postTitle: string,
+    isReply: boolean = false
+  ): Promise<void> {
+    this.logger.debug(`Creating comment notification for user ${recipientId} from ${senderId}`);
+    
+    try {
+      // Get sender details for personalized notification
+      const sender = await this.usersService.findById(senderId);
+      
+      if (!sender) {
+        this.logger.warn(`Could not find sender details for comment notification`);
+        return;
+      }
+      
+      // Prepare content preview - truncate if too long
+      let contentPreview = comment.content || '';
+      if (contentPreview.length > 50) {
+        contentPreview = contentPreview.substring(0, 47) + '...';
+      }
+      
+      // Select appropriate notification type and content
+      const notificationType = isReply ? NotificationType.COMMUNITY_COMMENT : NotificationType.COMMUNITY_POST;
+      const title = isReply 
+        ? `${sender.name || 'Someone'} replied to your comment`
+        : `${sender.name || 'Someone'} commented on ${postTitle}`;
+      
+      // Create notification
+      await this.notificationsService.create({
+        recipientId,
+        senderId,
+        type: notificationType,
+        title,
+        content: contentPreview,
+        channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+        actionUrl: `/dashboard/communities/posts/${postId}?comment=${comment.id}`,
+        data: {
+          postId,
+          commentId: comment.id,
+          isReply,
+          parentId: comment.parentId
+        }
+      });
+      
+      this.logger.debug(`Successfully created comment notification for user ${recipientId}`);
+    } catch (error) {
+      this.logger.error(`Failed to create comment notification: ${error.message}`, error.stack);
+      // Let the error propagate to the caller which will handle it
+      throw error;
+    }
   }
 
   async deleteComment(commentId: string, userId: string): Promise<{ success: boolean }> {

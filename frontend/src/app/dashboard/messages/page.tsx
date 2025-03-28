@@ -6,19 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import messageService from '@/services/api/message';
 import ConversationList from '@/features/messages/components/ConversationList';
 import ChatInterface from '@/features/messages/components/ChatInterface';
-
-interface Conversation {
-  id: string;
-  user1Id: string;
-  user2Id: string;
-  lastMessageAt?: string;
-  createdAt: string;
-  updatedAt: string;
-  isActive: boolean;
-  lastMessage?: any;
-  unreadCount?: number;
-  otherUser?: any;
-}
+import { Conversation } from '@/types/conversation';
 
 export default function MessagesPage() {
   const { user } = useAuth();

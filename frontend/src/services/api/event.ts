@@ -53,6 +53,12 @@ export interface Event {
     name: string;
     profilePicture?: string;
   };
+  community?: {
+    id: string;
+    name: string;
+    imageUrl?: string;
+    category?: string;
+  };
 }
 
 export interface PaginatedResponse<T> {
@@ -74,6 +80,16 @@ export interface EventDiscoveryOptions {
   endDate?: string;
   limit?: number;
   page?: number;
+  search?: string;
+  sort?: string;
+  category?: string;
+  myCommunitiesOnly?: boolean;
+  isAttending?: boolean;
+  location?: {
+    lat: number;
+    lng: number;
+    distance: number;
+  };
 }
 
 const eventService = {

@@ -10,6 +10,15 @@ interface ProfileData {
   bio?: string;
   profilePicture?: string;
   interests?: string[];
+  relationshipType?: string;
+  lifestyle?: {
+    smoking?: string;
+    drinking?: string;
+    diet?: string;
+    exercise?: string;
+  };
+  personality?: string[];
+  values?: string[];
   preferences?: {
     ageRange?: { min: number; max: number };
     distance?: number;
@@ -31,6 +40,13 @@ interface ProfileData {
     showLastActive?: boolean;
     showOnlineStatus?: boolean;
   };
+  religion?: string;
+  religiousImportance?: string;
+  languages?: string[];
+  wantChildren?: string;
+  petPreferences?: string[];
+  communicationStyle?: string;
+  loveLanguages?: string[];
   isVerified: boolean;
   isPremium: boolean;
   createdAt: string;
@@ -42,6 +58,15 @@ interface UpdateProfileData {
   location?: string;
   gender?: string;
   interests?: string[];
+  relationshipType?: string;
+  lifestyle?: {
+    smoking?: string;
+    drinking?: string;
+    diet?: string;
+    exercise?: string;
+  };
+  personality?: string[];
+  values?: string[];
   preferences?: {
     ageRange?: { min: number; max: number };
     distance?: number;
@@ -63,6 +88,13 @@ interface UpdateProfileData {
     showLastActive?: boolean;
     showOnlineStatus?: boolean;
   };
+  religion?: string;
+  religiousImportance?: string;
+  languages?: string[];
+  wantChildren?: string;
+  petPreferences?: string[];
+  communicationStyle?: string;
+  loveLanguages?: string[];
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';

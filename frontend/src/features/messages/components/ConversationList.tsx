@@ -1,22 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
-
-interface Conversation {
-  id: string;
-  lastMessageAt?: string;
-  lastMessage?: {
-    content: string;
-    createdAt: string;
-  };
-  unreadCount?: number;
-  otherUser?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    profilePhoto?: string;
-  };
-}
+import { Conversation } from '@/types/conversation';
 
 interface ConversationListProps {
   conversations: Conversation[];

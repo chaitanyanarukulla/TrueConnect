@@ -10,6 +10,7 @@ import { UsersModule } from '../users/users.module';
 import { MatchesModule } from '../matches/matches.module';
 import { MessagesGateway } from './gateways/messages.gateway';
 import { LoggingModule } from '../logging/logging.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { LoggingModule } from '../logging/logging.module';
     UsersModule,
     MatchesModule,
     LoggingModule,
+    NotificationsModule,
   ],
   controllers: [MessagesController],
   providers: [MessagesService, MessagesGateway],
